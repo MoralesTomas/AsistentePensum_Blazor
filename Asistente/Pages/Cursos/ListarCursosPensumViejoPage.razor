@@ -1,0 +1,8 @@
+﻿@page "/cursos/listaCursos"
+
+<AuthorizeView Roles="Admin,User">
+    <div style="display: flex; align-items: center; justify-content: center;">
+        <h1>Listado de cursos asignados</h1>
+    </div>
+    <Asistente.Components.Cursos.ListarCursosViejoPensumComponent/>
+</AuthorizeView>

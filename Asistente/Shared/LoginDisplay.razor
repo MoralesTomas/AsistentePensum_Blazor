@@ -1,0 +1,18 @@
+﻿<AuthorizeView Roles="Admin">
+    <a href="Identity/Account/Manage">Configuracion</a>
+    <form method="post" action="Identity/Account/LogOut">
+        <button type="submit" class="nav-link btn btn-link">Cerrar sesion</button>
+    </form>
+    <a href="Identity/Account/Register">Registrarse</a>
+</AuthorizeView>
+
+
+<AuthorizeView Roles="User">
+        <a href="Identity/Account/Manage">Configuracion</a>
+        <form method="post" action="Identity/Account/LogOut">
+            <button type="submit" class="nav-link btn btn-link">Cerrar sesion</button>
+        </form>
+</AuthorizeView>
+
+ <a href="Identity/Account/Login">IniciarSesion</a>
+

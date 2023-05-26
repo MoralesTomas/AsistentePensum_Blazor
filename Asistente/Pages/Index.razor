@@ -1,0 +1,153 @@
+﻿@page "/"
+
+@inject Ob_Usuario obUsuario
+@inject IJSRuntime JSRuntime
+
+@using Microsoft.AspNetCore.Components;
+@using Microsoft.AspNetCore.Components.Authorization;
+@using System.Security.Claims;
+@using System.Threading.Tasks;
+
+<PageTitle>Index</PageTitle>
+
+<h1>Bienvenido</h1>
+
+<div style=" width:80vw;height: 70vh; display: flex; align-items: center; justify-content: center;">
+    <h5 class="parrafo" >Espero que esta aplicación te sea de utilidad para informarte sobre los cursos que puedes cursar este semestre o en vacaciones 🥸
+    
+    <br />
+    <br />
+    Puedes conocer el código en mi perfil de <a style="color:black"  href="https://linktr.ee/moralestomas" target="_blank" >GITHUB</a>
+
+    <br />
+    <br />
+    <a style="color:black" href="about">Sobre el desarrollador</a>.
+    <br />
+    <br />
+    ¡SALUDOS!
+
+    <br />
+    <br />
+    Si no tienes un usuario asignado puedes contactarte conmigo para asignarte uno 🥸
+    <br />
+    <br />
+    Si quieres probar la aplicacion puedes utilizar las siguientes credenciales usuario: <strong>invitado@gmail.com</strong> contraseña: <strong>Invitado123!#$</strong>
+
+
+    </h5>
+</div>
+
+
+
+<AuthorizeView Roles="Admin">
+    <h1>USTED ES ADMIN</h1>
+
+    @if (!cargando)
+    {
+            <h1>Cantidad de cursos asignados: @cantidadCursos</h1>
+            <h1>Su estado es @estado</h1>
+            <button @onclick="cambiarEstado">Click</button>
+    }
+
+</AuthorizeView>
+
+<AuthorizeView Roles="User">
+</AuthorizeView>
+
+@code {
+
+    #region VARIABLES GLOBALES
+
+    private int cantidadCursos = 0;
+    private bool cargando = false;
+    private string userId;
+    private bool estado;
+    private bool busqueda = false;
+
+    List<Curso> cursos = new List<Curso>();
+
+    #endregion
+    
+    #region METODO PARA OBTENER LOS DATOS DEL USUARIO
+
+    [Inject]
+    public AuthenticationStateProvider AuthenticationStateProvider { get; set; }
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authenticationState.User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            // Utiliza el userId como necesites
+            algoritmo();
+            busqueda = true;
+
+            //jalando los cursos
+            cursos = obUsuario.ObtenerCursosPorId(userId);
+            cantidadCursos = cursos.Count();
+        }
+
+
+    }
+
+    #endregion
+
+    
+    #region METODO PARA CAMBIAR SI ES ADMIN
+    private void algoritmo()
+    {
+        var usuario = obUsuario.obtenerUsuarioPorId(userId);
+        estado = usuario.AsignacionVieja;
+    }
+
+    private void cambiarEstado()
+    {
+
+        if (busqueda)
+        {
+            var usuario = obUsuario.obtenerUsuarioPorId(userId);
+            if (usuario.AsignacionVieja)
+            {
+                usuario.AsignacionVieja = false;
+            }
+            else
+            {
+                usuario.AsignacionVieja = true;
+            }
+
+            obUsuario.ActualizarUsuario(usuario);
+            algoritmo();
+        }
+    }
+    #endregion
+
+    #region METODO PARA ELIMINAR EL DIV DEL SERVER
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("eval", @"
+                document.addEventListener(""DOMContentLoaded"", function() {
+                  var scriptElements = document.getElementsByTagName(""script"");
+                  for (var i = 0; i < scriptElements.length; i++) {
+                    var script = scriptElements[i];
+                    if (
+                      script.innerHTML.includes(""Web hosting by Somee.com"") &&
+                      script.innerHTML.includes(""ads.mgmt.somee.com"")
+                    ) {
+                      script.remove();
+                      break;
+                    }
+                  }
+                });
+            ");
+        }
+    }
+    #endregion
+
+}

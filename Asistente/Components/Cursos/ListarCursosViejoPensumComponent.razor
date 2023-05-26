@@ -1,0 +1,145 @@
+﻿@inject Ob_Usuario obUsuario
+
+@using Microsoft.AspNetCore.Components;
+@using Microsoft.AspNetCore.Components.Authorization;
+@using System.Security.Claims;
+@using System.Threading.Tasks;
+
+
+<AuthorizeView Roles="Admin,User">
+
+    <div class="ContScroll_min_des">
+
+    <table class="table table-dark table-striped table-hover table-bordered">
+        <thead>
+            <tr>
+                <th>Descripcion</th>
+                <th>Cantidad</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            <tr>
+                <td>Cursos asignados</td>
+                <td>@cantidadCursosUsuario</td>
+            </tr>
+
+            <tr>
+                <td>Cursos aprovados</td>
+                <td>@cantidadCursosAprovados</td>
+            </tr>
+
+            <tr>
+                <td>Cursos por aprovar</td>
+                <td>@cantidadCursosPorAprovar</td>
+            </tr>
+
+            <tr>
+                <td>Creditos obtenidos</td>
+                <td>@cantidadCreditosActuales</td>
+            </tr>
+
+        </tbody>
+
+    </table>
+
+    </div>
+
+    <br/>
+    <br/>
+
+        <div class="ContScroll_min">
+        <table class="table table-dark table-striped table-hover table-bordered">
+
+        <thead>
+            <tr>
+                <th>Codigo curso</th>
+                <th>Nombre del curso</th>
+                <th>Creditos que otorga</th>
+                <th>Obligatorio?</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+                        @foreach (var curso in cursos)
+                        {
+                            <tr>
+                                <td>@curso.CursoId</td>
+                                <td>@curso.Nombre</td>
+                                <td>@curso.Creditos</td>
+                                <td>@curso.Obligatorio</td>
+                            </tr>
+
+                        }
+
+        </tbody>
+    </table>
+    </div>
+    <br />
+    <br />
+
+</AuthorizeView>
+
+
+
+@code{
+
+    #region VARIABLES GLOBALES
+    //Listado de cursos de este usuario
+    List<Curso> cursos = new List<Curso>();
+
+    //Variable que almacena el id del usuario
+    private string userId;
+
+    //Variable para validar que se debe hacer una busqueda.
+    private bool busqueda;
+
+    //Variable para contar la cantidad de cursos que tiene el usuario
+    private int cantidadCursosUsuario;
+
+    //Variable para contar la cantidad de cursos aprovados que tiene el usuario
+    private int cantidadCursosAprovados;
+
+    //Variable que contiene la resta de los cursos totales y los aprovados.
+    private int cantidadCursosPorAprovar;
+
+    //Variable que contiene la cantidad de creditos que posee el usuario actualmente.
+    private int cantidadCreditosActuales;
+
+    #endregion
+
+
+
+
+    #region METODO PARA OBTENCION DE DATOS DEL USUARIO
+
+    [Inject]
+    public AuthenticationStateProvider AuthenticationStateProvider { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authenticationState.User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            // Utiliza el userId como necesites
+            busqueda = true;
+
+            //Obteniendo los cursos
+            cursos =  obUsuario.ObtenerCursosPorId(userId).OrderBy( e=> e.Semestre ).ToList();
+
+            //asignando la cantidad de cursos.
+            cantidadCursosUsuario = cursos.Count();
+            cantidadCursosAprovados = obUsuario.ObtenerAprovadosPorId(userId);
+
+            cantidadCursosPorAprovar = cantidadCursosUsuario - cantidadCursosAprovados;
+
+            cantidadCreditosActuales = obUsuario.ObtenerCreditosPorId(userId);
+        }
+    }
+
+    #endregion
+}

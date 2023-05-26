@@ -1,0 +1,284 @@
+﻿@inject Ob_Usuario obUsuario
+
+@using Microsoft.AspNetCore.Components;
+@using Microsoft.AspNetCore.Components.Authorization;
+@using System.Security.Claims;
+@using System.Threading.Tasks;
+
+<AuthorizeView Roles="Admin,User">
+
+    <div style="display: flex; align-items: center; justify-content: center;">
+        <h1>Panel de control</h1>
+    </div>
+
+    <div>
+        @if(soloObligatorios)
+        {
+            <button type="button" class="btn btn-info" @onclick="cambioFiltro">Ver todos</button>
+        }else{
+            <button type="button" class="btn btn-info" @onclick="cambioFiltro">Ver solo obligatorios</button>
+        }
+    </div>
+
+    <hr/>
+
+    <div class="contDash"> 
+        <div class="contDesplegable">
+
+            @*Primer contenedor con la tabla de los datos de todos los cursos.*@
+
+        <div class="ContScroll">
+            
+            <table class=" table-container table table-dark table-striped table-hover table-bordered" style="table-layout: auto;">
+                <thead>
+                    <tr>
+                        <th style="white-space: nowrap; position: sticky; top: 0;">Codigo</th>
+                        <th style="white-space: nowrap; position: sticky; top: 0;"># Semestre</th>
+                        <th style="white-space: nowrap; position: sticky; top: 0;">Nombre</th>
+                        <th style="white-space: nowrap; position: sticky; top: 0;">Creditos</th>
+                        <th style="white-space: nowrap; position: sticky; top: 0;">Pre-requisitos</th>
+                        <th style="white-space: nowrap; position: sticky; top: 0;">Estado</th>
+                        <th style="white-space: nowrap; position: sticky; top: 0;">Obligatorio?</th>
+                        <th style="white-space: nowrap; position: sticky; top: 0;">Creditos necesarios</th>
+
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var relacion in relaciones)
+                        {
+                            //Si solo queremos obligatorios y que este curso no es oblogatorio. -> Si no es obligatorio entraremos en la condicion
+                            @if (soloObligatorios && !relacion.Curso.Obligatorio)
+                            {
+                                continue;
+                            }
+
+                            <tr>
+                                <td style="white-space: nowrap;">@relacion.CursoId</td>
+                                <td style="white-space: nowrap;">@relacion.Curso.Semestre</td>
+                                <td>@relacion.Curso.Nombre</td>
+                                <td style="white-space: nowrap;">@relacion.Curso.Creditos</td>
+                                <td style="white-space: nowrap;">
+                                    @*Lista ordenada de los pre*@
+                                    @if (@relacion.Curso.PreRequisitos != " ")
+                                    {
+                                        var listaPre = @relacion.Curso.PreRequisitos.Split(",");
+                                        <ol>
+                                        @foreach (var pre in listaPre)
+                                        {
+                                            <li>Codigo: @pre</li>    
+                                        }
+                                        </ol>
+                                    }
+                                </td>
+                                @if( relacion.Estado)
+                                {
+                                    @*bool estado = !posibilidadDeCursarElCurso(relacion.RelacionId);
+                                    @if( relacion.Estado && estado )*@
+                                    <td style="white-space: nowrap;">
+                                        <button type="button" class="btn btn-success" onclick="@(() => ActualizarEstado(@relacion.RelacionId))"> Aprovado </button>
+                                    </td>
+                                }
+                                 else
+                                {
+                                    bool estado = !posibilidadDeCursarElCurso(relacion.RelacionId);
+                                    <td style="white-space: nowrap;">
+                                        <button type="button" class="btn btn-info" disabled="@estado" onclick="@(() => ActualizarEstado(@relacion.RelacionId))"> Sin aprovar </button>
+                                    </td>
+                                }
+                                <td style="white-space: nowrap;">@relacion.Curso.Obligatorio</td>
+                                <td style="white-space: nowrap;">@relacion.Curso.CrMin</td>
+
+                            </tr>
+                        }
+                </tbody>
+
+            </table>
+
+
+
+        </div>
+
+            @*Segundo contenedor con la tabla de los cursos que podriamos llevar*@
+
+            <br />
+            <div style="display: flex; align-items: center; justify-content: center;">
+                <h1>Cursos que puedes llevar</h1>
+            </div>
+            <br />
+
+        <div class="ContScroll">
+            <table class="table table-dark table-striped table-hover table-bordered" style="table-layout: auto;">
+                <thead>
+                    <tr>
+                        <th style="white-space: nowrap; position: sticky; top: 0;">Codigo</th>
+                        <th style="white-space: nowrap; position: sticky; top: 0;"># Semestre</th>
+                        <th style="white-space: nowrap; position: sticky; top: 0;">Nombre</th>
+                        <th style="white-space: nowrap; position: sticky; top: 0;">Creditos</th>
+                        <th style="white-space: nowrap; position: sticky; top: 0;">Obligatorio?</th>
+                        <th style="white-space: nowrap; position: sticky; top: 0;">Pre-requisitos</th>
+                        <th style="white-space: nowrap; position: sticky; top: 0;">Creditos necesarios</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                        @foreach (var relacion in relaciones)
+                        {
+                            //Si solo queremos obligatorios y que este curso no es oblogatorio. -> Si no es obligatorio entraremos en la condicion
+                            @if(soloObligatorios && !relacion.Curso.Obligatorio){
+                                continue;
+                            }
+                            @if (posibilidadDeCursarElCurso( relacion.RelacionId ))
+                            {
+                                <tr>
+                                    <td style="white-space: nowrap;">@relacion.CursoId</td>
+                                    <td style="white-space: nowrap;">@relacion.Curso.Semestre</td>
+                                    <td>@relacion.Curso.Nombre</td>
+                                    <td style="white-space: nowrap;">@relacion.Curso.Creditos</td>
+                                    <td style="white-space: nowrap;">@relacion.Curso.Obligatorio</td>
+
+                                    <td style="white-space: nowrap;">
+                                        @*Lista ordenada de los pre*@
+                                        @if (@relacion.Curso.PreRequisitos != " ")
+                                        {
+                                            var listaPre = @relacion.Curso.PreRequisitos.Split(",");
+                                                            <ol>
+                                                @foreach (var pre in listaPre)
+                                                {
+                                                                        <li>Codigo: @pre</li>    
+                                                }
+                                                            </ol>
+                                        }
+                                    </td>
+                                    <td style="white-space: nowrap;">@relacion.Curso.CrMin</td>
+
+                                </tr>    
+                            }
+                            
+                        }
+                </tbody>
+
+            </table>
+
+        </div>
+
+        </div>
+    </div>
+
+    <br />
+    <br />
+
+    <h1>Tus creditos actuales: @creditosActuales</h1>
+
+
+</AuthorizeView>
+
+@code {
+
+    #region VARIABLES GLOBALES
+    //Listado de cursos de este usuario
+    List<Relacion> relaciones = new List<Relacion>();
+
+    //Variable que almacena el id del usuario
+    private string userId;
+
+    private int creditosActuales = 0;
+
+    //Variable para filtro de solo cursos obligatorios.
+    private bool soloObligatorios = false;
+
+    #endregion
+
+    #region METODO PARA OBTENCION DE DATOS DEL USUARIO
+
+    [Inject]
+    public AuthenticationStateProvider AuthenticationStateProvider { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authenticationState.User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            //Obteniendo los datos de las relaciones
+            relaciones = obUsuario.ObtenerRelacionesPorId(userId);
+            creditosActuales = relaciones.Where(e => e.Estado).Sum(e => e.Curso.Creditos);
+
+        }
+    }
+
+    #endregion
+
+    #region METODO PARA ACTUALIZAR EL ESTADO DE UN CURSO
+
+    private void ActualizarEstado(string idRelacion)
+    {
+        obUsuario.CambiarEstado(idRelacion);
+        //Obteniendo los datos de las relaciones
+        relaciones = obUsuario.ObtenerRelacionesPorId(userId);
+        creditosActuales = relaciones.Where(e => e.Estado).Sum(e => e.Curso.Creditos);
+
+        StateHasChanged();
+    }
+    #endregion
+
+    #region METODO PARA VALIDAR CURSOS QUE SE PUEDEN LLEVER AHORA
+
+    private bool posibilidadDeCursarElCurso( string idRelacion )
+    {
+        //Primero obtener el curso en base al id de la relacion
+        Relacion relacion = relaciones.Where(e => e.RelacionId == idRelacion).Last();
+
+        //VALIDAR que este curso aun no este ganado
+        if( relacion.Estado )
+        {
+            return false;
+        }
+
+        //VALIDAR que contemos con los creditos que solicita el curso
+        if (creditosActuales < relacion.Curso.CrMin)
+        {
+            return false;
+        }
+
+        //VALIDARque no tenga pre-requisitos.
+        if ( relacion.Curso.PreRequisitos == " ")
+        {
+            return true;
+        }
+
+        //VALIDAR que sus preRequisitos si esten ganados.
+
+        var listado = relacion.Curso.PreRequisitos.Split(",");
+
+        foreach (var pre in listado)
+        {
+            //Buscar la relacion que coincida con el usuario y el curso.
+
+            var relPivote = relaciones.Where(e => e.AspNetUserId == userId && e.CursoId == pre).Last();
+
+            //Ahora con dicha relacion necesitamos ver si esta en estado ganado.
+            if( !relPivote.Estado)
+            {
+                return false;
+            }
+        }
+
+        //Si luego de todas las validaciones llegamos a este punto entonces podremos llevar dicho curso.
+        return true;
+    }
+
+    #endregion
+
+    #region METODO PARA CAMBIAR EL FILTRO DE CURSOS
+    private void cambioFiltro()
+    {
+        soloObligatorios = !soloObligatorios;
+        StateHasChanged();
+    }
+    #endregion
+
+}

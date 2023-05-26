@@ -1,0 +1,29 @@
+{
+  "iisSettings": {
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true,
+    "iisExpress": {
+      "applicationUrl": "http://localhost:57977",
+      "sslPort": 44309
+    }
+  },
+  "profiles": {
+    "Asistente": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "applicationUrl": "https://localhost:7262;http://localhost:5255",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development" //Este antes era Development
+      }
+    },
+    "IIS Express": {
+      "commandName": "IISExpress",
+      "launchBrowser": true,
+      "applicationUrl": "http://www.asistentepensum.somee.com/",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Production", //Este antes era Development
+      }
+    }
+  }
+}

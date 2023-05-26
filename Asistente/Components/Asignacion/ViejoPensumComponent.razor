@@ -1,0 +1,107 @@
+﻿@*USING para poder objener la data*@
+@using Microsoft.AspNetCore.Components;
+@using Microsoft.AspNetCore.Components.Authorization;
+@using System.Security.Claims;
+@using System.Threading.Tasks;
+@inject SweetAlertService Swal
+@inject Ob_Usuario obUsuario
+@inject NavigationManager NavigationManager
+
+@if (mostrarAsignacionVieja && !cargando)
+{
+    <AuthorizeView Roles="User,Admin">
+    <div style="align-content:center">
+            <button class="form-group" @onclick="llamadoAsignacion">Asignar Pensum</button>
+    </div>
+    </AuthorizeView>
+}
+
+
+
+@if (cargando)
+{
+    <div id="app">
+            <div style="height: 70vh; display: flex; align-items: center; justify-content: center;">
+
+            <div class="spinner-border h5"></div>
+            <div class="h2">Por favor espere...</div>
+
+    </div>
+    </div>
+}
+
+
+
+@code {
+
+    private string UserId;
+    private bool mostrarAsignacionVieja;
+    private bool cargando = false;
+
+
+
+    #region VALIDACION para mostrar o no la opcion de asignacion
+
+    [Inject]
+    public AuthenticationStateProvider AuthenticationStateProvider { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authenticationState.User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            UserId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            // Utiliza el userId como necesites
+            var state = obUsuario.obtenerUsuarioPorId(UserId);
+            if (state == null)
+            {
+                return;
+            }
+            mostrarAsignacionVieja = state.AsignacionVieja;
+        }
+
+    }
+
+    #endregion
+
+    #region ASIGNACION DEL PENSUM VIEJO
+
+    private async Task llamadoAsignacion()
+    {
+        cargando = true;
+        
+        StateHasChanged(); // Actualizar la interfaz de usuario para mostrar "cargando"
+
+        await Task.Delay(500); // Agregar un retraso de 500 milisegundos
+
+        AsignarAnterior();
+    }
+
+    private async Task AsignarAnterior()
+    {
+        cargando = await obUsuario.AsignarPensumViejo(UserId);
+
+        var resultado = await Swal.FireAsync(new SweetAlertOptions
+            {
+                Title = "COMPLETADO!",
+                Text = "Se completo la asignacion de cursos!",
+                Icon = SweetAlertIcon.Success,
+                ShowCancelButton = false
+            });
+        cargando = false;
+        ReloadPage();
+    }
+
+    private void ReloadPage()
+    {
+        NavigationManager.NavigateTo("/", forceLoad: true);
+    }
+
+    #endregion
+
+
+
+
+}
